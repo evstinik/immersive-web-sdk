@@ -245,10 +245,13 @@ function setupRendering(sceneContainer: HTMLDivElement, config: any) {
   );
   camera.position.set(0, 1.7, 0);
 
+  console.log('Custom initializeWorld called');
+
   // Renderer Setup
   const renderer = new WebGLRenderer({
     antialias: true,
     alpha: config.xr.sessionMode === SessionMode.ImmersiveAR,
+    stencil: true,
     // @ts-ignore
     multiviewStereo: true,
   });
