@@ -323,6 +323,19 @@ export class XRInputManager {
           if (visualAdapter.visual) {
             visualAdapter.visual.model.visible = inputSourceData.isPrimary;
           }
+
+          if (
+            key === 'hand' &&
+            visualAdapter instanceof XRHandVisualAdapter &&
+            visualAdapter.indexTip
+          ) {
+            updatePose(
+              frame,
+              visualAdapter.indexTip,
+              refSpace,
+              this.xrOrigin.indexFingerTipSpaces[handedness],
+            );
+          }
         } else if (visualAdapter.connected) {
           visualAdapter.disconnect();
         }
@@ -375,11 +388,15 @@ export class XRInputManager {
       const squeezeEnd = connected
         ? !!gp?.getButtonUp('xr-standard-squeeze')
         : false;
+
+      const isHand = Boolean(inputSource?.hand);
+
+      // Treat all hand select events as both "select" **and** "squeeze" to add support for hand and grab pointers
       this.multiPointers[handedness].update(connected, delta, time, {
         selectStart,
         selectEnd,
-        squeezeStart,
-        squeezeEnd,
+        squeezeStart: isHand ? selectStart : squeezeStart,
+        squeezeEnd: isHand ? selectEnd : squeezeEnd,
       });
     });
   }

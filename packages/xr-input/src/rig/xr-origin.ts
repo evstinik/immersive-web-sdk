@@ -30,6 +30,11 @@ export class XROrigin extends Group {
     right: new Group(),
   };
 
+  public readonly indexFingerTipSpaces = {
+    left: new Group(),
+    right: new Group(),
+  };
+
   private headsetMatrix = new Matrix4();
 
   constructor() {
@@ -43,6 +48,8 @@ export class XROrigin extends Group {
       this.raySpaces.right,
       this.gripSpaces.left,
       this.gripSpaces.right,
+      this.indexFingerTipSpaces.left,
+      this.indexFingerTipSpaces.right,
     );
   }
 
