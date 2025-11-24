@@ -22,7 +22,7 @@ export class GrabPointer {
       { current: xrOrigin.pinchSpaces[handedness] },
       {},
       {
-        radius: 0.07,
+        radius: 0.03,
       },
     );
   }
