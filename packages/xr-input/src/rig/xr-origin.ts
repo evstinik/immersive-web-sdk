@@ -30,7 +30,7 @@ export class XROrigin extends Group {
     right: new Group(),
   };
 
-  public readonly indexFingerTipSpaces = {
+  public readonly pinchSpaces = {
     left: new Group(),
     right: new Group(),
   };
@@ -48,9 +48,9 @@ export class XROrigin extends Group {
       this.raySpaces.right,
       this.gripSpaces.left,
       this.gripSpaces.right,
-      this.indexFingerTipSpaces.left,
-      this.indexFingerTipSpaces.right,
     );
+    this.gripSpaces.left.add(this.pinchSpaces.left);
+    this.gripSpaces.right.add(this.pinchSpaces.right);
   }
 
   updateHead(frame: XRFrame, referenceSpace: XRReferenceSpace): void {

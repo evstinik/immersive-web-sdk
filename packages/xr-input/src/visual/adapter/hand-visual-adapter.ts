@@ -78,7 +78,7 @@ export const defaultHandLayout: InputLayout = {
 export class XRHandVisualAdapter extends XRInputVisualAdapter {
   public jointSpaces: XRJointSpace[] = [];
   public jointTransforms?: Float32Array;
-  public indexTip?: XRSpace;
+  private indexTip?: XRSpace;
   private thumbTip?: XRSpace;
   private pinchThreshold = 0.008;
   private pinchCooldown = 0;
@@ -200,6 +200,20 @@ export class XRHandVisualAdapter extends XRInputVisualAdapter {
           this.pinchCooldown = PINCH_COOLDOWN;
         }
         this.pinchData.curr = pinching;
+      }
+    }
+  }
+
+  public updatePinchSpace(frame: XRFrame, pinchSpace: Group) {
+    if (this.indexTip && this.thumbTip && this.gripXRSpace) {
+      const indexPose = frame.getPose(this.indexTip, this.gripXRSpace);
+      const thumbPose = frame.getPose(this.thumbTip, this.gripXRSpace);
+      if (indexPose && thumbPose) {
+        pinchSpace.position.lerpVectors(
+          indexPose.transform.position,
+          thumbPose.transform.position,
+          0.5,
+        );
       }
     }
   }

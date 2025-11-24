@@ -324,16 +324,10 @@ export class XRInputManager {
             visualAdapter.visual.model.visible = inputSourceData.isPrimary;
           }
 
-          if (
-            key === 'hand' &&
-            visualAdapter instanceof XRHandVisualAdapter &&
-            visualAdapter.indexTip
-          ) {
-            updatePose(
+          if (key === 'hand' && visualAdapter instanceof XRHandVisualAdapter) {
+            visualAdapter.updatePinchSpace(
               frame,
-              visualAdapter.indexTip,
-              refSpace,
-              this.xrOrigin.indexFingerTipSpaces[handedness],
+              this.xrOrigin.pinchSpaces[handedness],
             );
           }
         } else if (visualAdapter.connected) {

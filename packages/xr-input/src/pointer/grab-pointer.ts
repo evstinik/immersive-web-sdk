@@ -19,7 +19,7 @@ export class GrabPointer {
   ) {
     this.pointer = createGrabPointer(
       () => camera,
-      { current: xrOrigin.indexFingerTipSpaces[handedness] },
+      { current: xrOrigin.pinchSpaces[handedness] },
       {},
       {
         radius: 0.07,
