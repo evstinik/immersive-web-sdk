@@ -28,8 +28,13 @@ import {
   HP_WorldId,
   MassProperties,
   MotionType,
+  QSTransform,
 } from '@babylonjs/havok';
-import { detectShapeFromGeometry, generateMergedGeometry } from './utils';
+import {
+  detectShapeFromGeometry,
+  generateMergedGeometry,
+  getScaledGeometry,
+} from './utils';
 import { PhysicsManipulation } from './physicsManipulation';
 
 /**
@@ -67,6 +72,12 @@ export class PhysicsSystem extends createSystem(
     physicsEntities: {
       required: [PhysicsBody, PhysicsShape],
     },
+    onlyPhysicsEntities: {
+      required: [PhysicsBody],
+    },
+    onlyPhysicsShapes: {
+      required: [PhysicsShape],
+    },
     manipluatedEntities: {
       required: [PhysicsBody, PhysicsManipulation],
       where: [ne(PhysicsBody, '_engineBody', 0)],
@@ -89,8 +100,8 @@ export class PhysicsSystem extends createSystem(
     this.havokWorld = this.havok.HP_World_Create()[1];
     this.havok.HP_World_SetGravity(this.havokWorld, this.config.gravity.value);
 
-    // Unified cleanup
-    this.queries.physicsEntities.subscribe('disqualify', (entity) => {
+    // Cleanup shape and body separately
+    this.queries.onlyPhysicsShapes.subscribe('disqualify', (entity) => {
       if (!this.havok || !this.havokWorld) {
         return;
       }
@@ -98,6 +109,12 @@ export class PhysicsSystem extends createSystem(
       const engineShape = entity.getValue(PhysicsShape, '_engineShape');
       if (engineShape) {
         this.havok.HP_Shape_Release([BigInt(engineShape)]);
+      }
+    });
+
+    this.queries.onlyPhysicsEntities.subscribe('disqualify', (entity) => {
+      if (!this.havok || !this.havokWorld) {
+        return;
       }
 
       const engineBody = entity.getValue(PhysicsBody, '_engineBody');
@@ -127,7 +144,11 @@ export class PhysicsSystem extends createSystem(
           PhysicsShape,
           'dimensions',
         ) as Float32Array;
-        this.createHavokShapes(entity, dimensionsView);
+        const centerView = entity.getVectorView(
+          PhysicsShape,
+          'center',
+        ) as Float32Array;
+        this.createHavokShapes(entity, centerView, dimensionsView);
         return;
       } else {
         if (!engineBody && engineShape) {
@@ -321,7 +342,11 @@ export class PhysicsSystem extends createSystem(
     };
   }
 
-  private createHavokShapes(entity: Entity, dimensionsView: Float32Array) {
+  private createHavokShapes(
+    entity: Entity,
+    centerView: Float32Array,
+    dimensionsView: Float32Array,
+  ) {
     if (!entity.object3D) {
       console.warn(
         'PhysicsSystem: No object3D attached to entity',
@@ -365,6 +390,7 @@ export class PhysicsSystem extends createSystem(
       }
       case PhysicsShapeType.Box: {
         const boxShape = this.createBoxShape(
+          centerView,
           dimensionsView,
           entity.getValue(PhysicsShape, 'density') ?? 1.0,
           entity.getValue(PhysicsShape, 'restitution') ?? 0,
@@ -433,6 +459,33 @@ export class PhysicsSystem extends createSystem(
         }
         break;
       }
+
+      case PhysicsShapeType.Container: {
+        const childShapeId = entity.getValue(
+          PhysicsShape,
+          'containerChildShapeId',
+        );
+        if (!childShapeId) {
+          console.warn(
+            'PhysicsSystem: Cannot create container shape - no child shape ID provided for entity',
+            entity.index,
+          );
+          return;
+        }
+        const containerShape = this.createContainerShape(
+          childShapeId,
+          entity.getVectorView(PhysicsShape, 'scale') as Float32Array,
+        );
+        if (containerShape) {
+          PhysicsShape.data._engineShape[entity.index] = Number(containerShape);
+        } else {
+          console.warn(
+            'PhysicsSystem: Failed to create container shape for entity',
+            entity.index,
+          );
+        }
+        break;
+      }
     }
   }
 
@@ -462,6 +515,7 @@ export class PhysicsSystem extends createSystem(
   }
 
   private createBoxShape(
+    center: Float32Array,
     scale: Float32Array,
     density: number,
     restitution: number,
@@ -475,7 +529,7 @@ export class PhysicsSystem extends createSystem(
     }
 
     const boxShape = this.havok.HP_Shape_CreateBox(
-      [0, 0, 0],
+      [center[0], center[1], center[2]],
       [0, 0, 0, 1],
       [scale[0], scale[1], scale[2]],
     )[1];
@@ -535,8 +589,8 @@ export class PhysicsSystem extends createSystem(
 
     const geometry =
       object3D instanceof Mesh
-        ? object3D.geometry
-        : generateMergedGeometry(object3D);
+        ? getScaledGeometry(object3D)
+        : generateMergedGeometry(object3D); // TODO: Cleanup generated geometry
     const vertices = this.getVertices(geometry.attributes.position.array);
     if (!vertices) {
       console.warn(
@@ -626,6 +680,30 @@ export class PhysicsSystem extends createSystem(
     ]);
 
     return triMeshShape;
+  }
+
+  private createContainerShape(childShapeId: number, scale: Float32Array) {
+    if (!this.havok) {
+      console.warn(
+        'PhysicsSystem: Cannot create container shape - Havok physics engine not initialized',
+      );
+      return;
+    }
+
+    const containerShape = this.havok.HP_Shape_CreateContainer()[1];
+
+    const translation: QSTransform[0] = [0, 0, 0];
+    const rotation: QSTransform[1] = [0, 0, 0, 1];
+    const _scale: QSTransform[2] = [scale[0], scale[1], scale[2]];
+    const transform: QSTransform = [translation, rotation, _scale];
+
+    this.havok.HP_Shape_AddChild(
+      containerShape,
+      [BigInt(childShapeId)],
+      transform,
+    );
+
+    return containerShape;
   }
 
   private getVertices(vertices: TypedArray) {

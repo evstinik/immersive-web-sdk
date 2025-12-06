@@ -18,6 +18,11 @@ import {
   InstancedMesh,
   Mesh,
 } from '../runtime/index.js';
+import {
+  getVoidObject,
+  Intersection,
+  IntersectionOptions,
+} from '@pmndrs/pointer-events';
 
 type PointerCapture = { intersection: any; object: Object3D };
 
@@ -323,13 +328,130 @@ function patchedIntersectSphereMesh(
   };
 }
 
-export function patchedExecuteIntersection(this: any, object: Object3D) {
+export function patchedExecuteIntersection(
+  this: any,
+  object: Object3D,
+  objectPointerEventsOrder: number | undefined,
+) {
   if (!this.isReady()) {
     return;
+  }
+  const start = this.intersects.length;
+  if (!this.pointerEventsOrders) {
+    this.pointerEventsOrders = [];
   }
   patchedIntersectSphereWithObject(
     this.collisionSphere,
     object,
     this.intersects,
   );
+  pushTimes(
+    this.pointerEventsOrders,
+    objectPointerEventsOrder,
+    this.intersects.length - start,
+  );
+}
+
+function pushTimes<T>(target: Array<T>, value: T, times: number): void {
+  while (times > 0) {
+    target.push(value);
+    --times;
+  }
+}
+
+export function patchedFinalizeIntersection(
+  this: any,
+  scene: Object3D,
+): Intersection {
+  const pointerPosition = this.fromPosition.clone();
+  const pointerQuaternion = this.fromQuaternion.clone();
+
+  const index = getDominantIntersectionIndex(
+    this.intersects,
+    this.pointerEventsOrders,
+    this.options,
+  );
+  const intersection = index == null ? undefined : this.intersects[index];
+  this.intersects.length = 0;
+
+  if (intersection == null) {
+    return {
+      details: {
+        type: 'sphere' as const,
+      },
+      distance: 0,
+      point: pointerPosition,
+      object: getVoidObject(scene),
+      pointerPosition,
+      pointerQuaternion,
+      pointOnFace: pointerPosition,
+      localPoint: pointerPosition,
+    };
+  }
+
+  intersection.object.updateWorldMatrix(true, false);
+
+  return Object.assign(intersection, {
+    details: {
+      type: 'sphere' as const,
+    },
+    pointOnFace: intersection.point,
+    pointerPosition: this.fromPosition.clone(),
+    pointerQuaternion: this.fromQuaternion.clone(),
+    localPoint: intersection.point
+      .clone()
+      .applyMatrix4(
+        invertedMatrixHelper.copy(intersection.object.matrixWorld).invert(),
+      ),
+  });
+}
+
+export function getDominantIntersectionIndex<T extends Intersection>(
+  intersections: Array<T>,
+  pointerEventsOrders: Array<number | undefined>,
+  { customSort: compare = defaultSort as any }: IntersectionOptions = {},
+  filter?: (intersection: Intersection) => boolean,
+): number | undefined {
+  let intersection: T | undefined = undefined;
+  let pointerEventsOrder: number | undefined = undefined;
+  let index: number | undefined = undefined;
+  const length = intersections.length;
+  for (let i = 0; i < length; i++) {
+    const newIntersection = intersections[i];
+    if (filter?.(newIntersection) === false) {
+      continue;
+    }
+    const newPointerEventsOrder = pointerEventsOrders[i];
+    if (
+      intersection == null ||
+      compare(
+        newIntersection,
+        newPointerEventsOrder,
+        intersection,
+        pointerEventsOrder,
+      ) < 0
+    ) {
+      index = i;
+      intersection = newIntersection;
+      pointerEventsOrder = newPointerEventsOrder;
+    }
+  }
+  return index;
+}
+
+/**
+ * @returns a negative number if i1 should be sorted before i2
+ */
+function defaultSort(
+  i1: Intersection,
+  pointerEventsOrder1: number = 0,
+  i2: Intersection,
+  pointerEventsOrder2: number = 0,
+): number {
+  if (pointerEventsOrder1 != pointerEventsOrder2) {
+    //inverted order because order is sorted highest first
+    return pointerEventsOrder2 - pointerEventsOrder1;
+  }
+  //i1 - i2 because negative values mean the sorting i1 before i2 is correct
+  return i1.distance - i2.distance;
 }

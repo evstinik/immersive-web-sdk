@@ -35,6 +35,11 @@ export class XROrigin extends Group {
     right: new Group(),
   };
 
+  public readonly touchPointerSpace = {
+    left: new Group(),
+    right: new Group(),
+  };
+
   private headsetMatrix = new Matrix4();
 
   constructor() {

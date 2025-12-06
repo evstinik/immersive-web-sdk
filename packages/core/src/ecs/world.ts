@@ -82,7 +82,9 @@ export class World extends ElicsWorld {
   public xrDefaults: import('../init/xr.js').XROptions | undefined;
 
   constructor() {
-    super();
+    super({
+      entityCapacity: 10_000,
+    });
     const originalReleaseFunc = this.entityManager.releaseEntityInstance.bind(
       this.entityManager,
     );

@@ -177,3 +177,13 @@ export function generateMergedGeometry(object3D: Object3D): BufferGeometry {
 
   return mergedGeometry;
 }
+
+export function getScaledGeometry(mesh: Mesh): BufferGeometry {
+  if (mesh.scale.x === 1 && mesh.scale.y === 1 && mesh.scale.z === 1) {
+    return mesh.geometry;
+  }
+
+  const scaledGeometry = mesh.geometry.clone();
+  scaledGeometry.scale(mesh.scale.x, mesh.scale.y, mesh.scale.z);
+  return scaledGeometry;
+}

@@ -10,8 +10,9 @@ import type { Object3D, PerspectiveCamera } from 'three';
 import type { XROrigin } from '../rig/xr-origin.js';
 import { GrabPointer } from './grab-pointer.js';
 import { RayPointer } from './ray-pointer.js';
+import { TouchPointer } from './touch-pointer.js';
 
-export type PointerKind = 'ray' | 'grab' | 'custom';
+export type PointerKind = 'ray' | 'grab' | 'touch' | 'custom';
 
 type Registered = {
   kind: PointerKind;
@@ -34,6 +35,12 @@ export class MultiPointer {
     registered: boolean;
     unregister?: () => void;
   };
+  private touch?: {
+    pointer: Pointer;
+    visual: TouchPointer;
+    registered: boolean;
+    unregister?: () => void;
+  };
   private defaultKind: PointerKind = 'ray';
 
   constructor(
@@ -46,8 +53,10 @@ export class MultiPointer {
     // Build built-ins (register only ray by default)
     const ray = new RayPointer(this.camera, this.xrOrigin, this.handedness);
     const grab = new GrabPointer(this.camera, this.xrOrigin, this.handedness);
+    const touch = new TouchPointer(this.camera, this.xrOrigin, this.handedness);
     this.ray = { pointer: ray.pointer, visual: ray, registered: false };
     this.grab = { pointer: grab.pointer, visual: grab, registered: false };
+    this.touch = { pointer: touch.pointer, visual: touch, registered: false };
     this.toggleSubPointer('ray', true);
   }
 
@@ -75,6 +84,14 @@ export class MultiPointer {
       !!input?.selectStart,
       !!input?.selectEnd,
       policy,
+    );
+
+    this.touch?.visual.update(
+      connected,
+      delta,
+      time,
+      !!input?.selectStart,
+      !!input?.selectEnd,
     );
 
     // Emit down/up based on input
@@ -161,7 +178,8 @@ export class MultiPointer {
 
   // Public toggle API
   toggleSubPointer(kind: PointerKind, enabled: boolean): boolean {
-    const entry = kind === 'ray' ? this.ray : this.grab;
+    const entry =
+      kind === 'ray' ? this.ray : kind === 'grab' ? this.grab : this.touch;
     if (!entry) {
       return false;
     }
@@ -186,7 +204,8 @@ export class MultiPointer {
   }
 
   getSubPointerState(kind: PointerKind): { registered: boolean } {
-    const entry = kind === 'ray' ? this.ray : this.grab;
+    const entry =
+      kind === 'ray' ? this.ray : kind === 'grab' ? this.grab : this.touch;
     return { registered: !!entry?.registered };
   }
 
@@ -224,6 +243,20 @@ export class MultiPointer {
           unregister,
         });
         this.grab.unregister = unregister;
+      }
+    }
+    if (this.touch) {
+      if (this.touch.registered) {
+        const unregister = this.combined.register(
+          this.touch.pointer,
+          this.defaultKind === 'touch',
+        );
+        this.registered.push({
+          kind: 'touch',
+          pointer: this.touch.pointer,
+          unregister,
+        });
+        this.touch.unregister = unregister;
       }
     }
   }

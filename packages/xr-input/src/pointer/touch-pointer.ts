@@ -5,11 +5,15 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { Pointer, createGrabPointer } from '@pmndrs/pointer-events';
+import {
+  Pointer,
+  createGrabPointer,
+  createTouchPointer,
+} from '@pmndrs/pointer-events';
 import type { PerspectiveCamera } from 'three';
 import type { XROrigin } from '../rig/xr-origin.js';
 
-export class GrabPointer {
+export class TouchPointer {
   public pointer: Pointer;
 
   constructor(
@@ -17,13 +21,11 @@ export class GrabPointer {
     xrOrigin: XROrigin,
     handedness: 'left' | 'right',
   ) {
-    this.pointer = createGrabPointer(
+    this.pointer = createTouchPointer(
       () => camera,
-      { current: xrOrigin.pinchSpaces[handedness] },
+      { current: xrOrigin.touchPointerSpace[handedness] },
       {},
-      {
-        radius: 0.07,
-      },
+      {},
     );
   }
 

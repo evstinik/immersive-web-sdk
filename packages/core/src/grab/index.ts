@@ -10,6 +10,7 @@ import {
   patchedExecuteIntersection,
   patchedIntersectRayPointerCapture,
   patchedIntersectSpherePointerCapture,
+  patchedFinalizeIntersection,
 } from './pointer-events-patch.js';
 
 // Interaction state flags and Interactable marker now live in InputSystem
@@ -25,4 +26,6 @@ RayIntersector.prototype.intersectPointerCapture =
   patchedIntersectRayPointerCapture;
 SphereIntersector.prototype.intersectPointerCapture =
   patchedIntersectSpherePointerCapture;
-SphereIntersector.prototype.executeIntersection = patchedExecuteIntersection;
+SphereIntersector.prototype.executeIntersection =
+  patchedExecuteIntersection as any;
+SphereIntersector.prototype.finalizeIntersection = patchedFinalizeIntersection;

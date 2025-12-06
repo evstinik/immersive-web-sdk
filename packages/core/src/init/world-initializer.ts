@@ -508,7 +508,9 @@ function setupRenderLoop(world: World, renderer: WebGLRenderer) {
       VisibilityState.NonImmersive) as VisibilityState;
     // Run ECS systems in priority order (InputSystem => LocomotionSystem => GrabSystem)
     world.update(delta, elapsedTime);
+    (world.globals as any).onBeforeRender?.();
     renderer.render(world.scene, world.camera);
+    (world.globals as any).onAfterRender?.();
   };
 
   renderer.setAnimationLoop(render);

@@ -33,6 +33,10 @@ export const PhysicsShapeType = {
    * When this type is selected, the dimensions field in PhysicsShape will be overridden by the size of the Three.js geometry.
    */
   Auto: 'Auto',
+  /**
+   * A compound shape is made up of multiple child shapes. Supports scaling.
+   */
+  Container: 'Container',
 } as const;
 
 export const DEFAULT_DENSITY = 1.0;
@@ -88,6 +92,8 @@ export const PhysicsShape = createComponent(
     },
     /** The dimension of the physics shape. The definition of it is based on the selection of {@link PhysicsShapeType}. */
     dimensions: { type: Types.Vec3, default: [0.0, 0.0, 0.0] },
+    /** The center offset of the physics shape relative to the entity's origin. */
+    center: { type: Types.Vec3, default: [0.0, 0.0, 0.0] },
     /** The density of the physics shape. It is used to calculate the mass. */
     density: { type: Types.Float32, default: 1.0 },
     /** Restitution controls bounciness (0 = no bounce, 1 = perfect bounce). */
@@ -95,6 +101,10 @@ export const PhysicsShape = createComponent(
     /** Friction to define the sliding behavior on surfaces. */
     friction: { type: Types.Float32, default: 0.5 },
     _engineShape: { type: Types.Float64, default: 0 },
+    /** Child shape ID for container shape */
+    containerChildShapeId: { type: Types.Float64, default: 0 },
+    /** Scale of the shape for container shape */
+    scale: { type: Types.Vec3, default: [1.0, 1.0, 1.0] },
   },
   'Component to define physics shape of an entity.',
 );

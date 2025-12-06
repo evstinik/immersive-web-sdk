@@ -10,6 +10,7 @@ import { createSystem, Entity, VisibilityState } from '../ecs/index.js';
 import { Mesh, Object3D, Object3DEventMap } from '../runtime/index.js';
 import { Transform } from '../transform/index.js';
 import { Hovered, Interactable, Pressed } from './state-tags.js';
+import { MultiPointer, XRInputManager } from '@iwsdk/xr-input';
 
 /**
  * Samples XR poses (hands/controllers/head) and gamepads, curates the set of
@@ -126,14 +127,37 @@ export class InputSystem extends createSystem(
       }
     };
 
-    const enter = () => {
+    const enter = (event: Object3DEventMap['pointerenter']) => {
       maybeRefreshBVH();
+      const handedness = getPointerHandedness(
+        event.pointerId ?? 0,
+        this.world.input,
+      );
       if (!entity.hasComponent(Hovered)) {
         entity.addComponent(Hovered);
       }
+      entity.setValue(
+        Hovered,
+        handedness === 'right' ? 'byRightHand' : 'byLeftHand',
+        true,
+      );
     };
-    const leave = () => {
-      entity.removeComponent(Hovered);
+    const leave = (event: Object3DEventMap['pointerenter']) => {
+      const handedness = getPointerHandedness(
+        event.pointerId ?? 0,
+        this.world.input,
+      );
+      entity.setValue(
+        Hovered,
+        handedness === 'right' ? 'byRightHand' : 'byLeftHand',
+        false,
+      );
+      if (
+        !entity.getValue(Hovered, 'byRightHand') &&
+        !entity.getValue(Hovered, 'byLeftHand')
+      ) {
+        entity.removeComponent(Hovered);
+      }
     };
     const down = () => {
       maybeRefreshBVH();
@@ -156,7 +180,11 @@ export class InputSystem extends createSystem(
     object3D.traverse((child) => {
       if ((child as Mesh).isMesh) {
         const mesh = child as Mesh;
-        if ((mesh as any).geometry && !(mesh as any).geometry.boundsTree) {
+        if (
+          (mesh as any).geometry &&
+          !(mesh as any).geometry.boundsTree &&
+          !(mesh as any).isBatchedMesh
+        ) {
           try {
             (mesh as any).geometry.computeBoundsTree();
           } catch (error) {
@@ -198,4 +226,18 @@ function isDescendantOf(
     object = object.parent as any;
   }
   return false;
+}
+
+function getPointerHandedness(
+  pointerId: number,
+  inputManager: XRInputManager,
+): 'left' | 'right' {
+  const checkPointer = (pointer: MultiPointer) => {
+    const _pointer = pointer as unknown as {
+      registered: { pointer: { id: number } }[];
+    };
+    return _pointer.registered.find((p) => p.pointer.id === pointerId);
+  };
+  if (checkPointer(inputManager.multiPointers.left)) return 'left';
+  return 'right';
 }

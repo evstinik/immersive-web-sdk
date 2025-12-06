@@ -329,6 +329,15 @@ export class XRInputManager {
               frame,
               this.xrOrigin.pinchSpaces[handedness],
             );
+
+            if (visualAdapter.indexTip) {
+              updatePose(
+                frame,
+                visualAdapter.indexTip,
+                refSpace,
+                this.xrOrigin.touchPointerSpace[handedness],
+              );
+            }
           }
         } else if (visualAdapter.connected) {
           visualAdapter.disconnect();

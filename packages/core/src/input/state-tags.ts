@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { createComponent } from '../ecs/index.js';
+import { createComponent, Types } from '../ecs/index.js';
 
 /**
  * Marks an entity as eligible for XR/UI pointer interaction.
@@ -51,7 +51,10 @@ export const Interactable = createComponent(
  */
 export const Hovered = createComponent(
   'Hovered',
-  {},
+  {
+    byRightHand: { type: Types.Boolean, default: false },
+    byLeftHand: { type: Types.Boolean, default: false },
+  },
   'A tag added by InputSystem while a pointer is hovering over the entity.',
 );
 

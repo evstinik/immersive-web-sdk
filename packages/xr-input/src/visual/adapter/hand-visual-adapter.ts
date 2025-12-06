@@ -78,7 +78,7 @@ export const defaultHandLayout: InputLayout = {
 export class XRHandVisualAdapter extends XRInputVisualAdapter {
   public jointSpaces: XRJointSpace[] = [];
   public jointTransforms?: Float32Array;
-  private indexTip?: XRSpace;
+  public indexTip?: XRSpace;
   private thumbTip?: XRSpace;
   private pinchThreshold = 0.008;
   private pinchCooldown = 0;

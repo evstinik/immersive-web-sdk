@@ -37,6 +37,12 @@ pnpm run format
 pnpm --filter '@iwsdk/core' run build
 ```
 
+Quick rebuild:
+
+```bash
+cd ../.. && pnpm run --filter=@iwsdk/xr-input --filter=@iwsdk/core build && cd packages/core && pnpm pack && cd ../xr-input && pnpm pack
+```
+
 ## Documentation
 
 For detailed information about using IWSDK, including step-by-step guides, architectural concepts, and complete API references, please visit our documentation site:
