@@ -183,7 +183,8 @@ export class InputSystem extends createSystem(
         if (
           (mesh as any).geometry &&
           !(mesh as any).geometry.boundsTree &&
-          !(mesh as any).isBatchedMesh
+          !(mesh as any).isBatchedMesh &&
+          !mesh.userData.isOutlineMesh
         ) {
           try {
             (mesh as any).geometry.computeBoundsTree();

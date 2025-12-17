@@ -325,9 +325,24 @@ export class XRInputManager {
           }
 
           if (key === 'hand' && visualAdapter instanceof XRHandVisualAdapter) {
+            const hasGamepad = !!(inputSource && inputSource.gamepad);
+            const connected = !!(
+              inputSource &&
+              hasGamepad &&
+              this.gamepads[handedness]
+            );
+            const selectStart = connected
+              ? !!this.gamepads[handedness]?.getSelectStart()
+              : false;
+            const selectEnd = connected
+              ? !!this.gamepads[handedness]?.getSelectEnd()
+              : false;
+
             visualAdapter.updatePinchSpace(
               frame,
               this.xrOrigin.pinchSpaces[handedness],
+              selectStart,
+              selectEnd,
             );
 
             if (visualAdapter.indexTip) {

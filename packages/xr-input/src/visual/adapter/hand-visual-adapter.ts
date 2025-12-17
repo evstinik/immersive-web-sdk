@@ -204,16 +204,34 @@ export class XRHandVisualAdapter extends XRInputVisualAdapter {
     }
   }
 
-  public updatePinchSpace(frame: XRFrame, pinchSpace: Group) {
+  public updatePinchSpace(
+    frame: XRFrame,
+    pinchSpace: Group,
+    selectStart: boolean,
+    selectEnd: boolean,
+  ) {
     if (this.indexTip && this.thumbTip && this.gripXRSpace) {
+      pinchSpace.userData.isPinching = pinchSpace.userData.isPinching || false;
+      if (selectStart) {
+        pinchSpace.userData.isPinching = true;
+      } else if (selectEnd) {
+        pinchSpace.userData.isPinching = false;
+      }
+
       const indexPose = frame.getPose(this.indexTip, this.gripXRSpace);
       const thumbPose = frame.getPose(this.thumbTip, this.gripXRSpace);
       if (indexPose && thumbPose) {
-        pinchSpace.position.lerpVectors(
-          indexPose.transform.position,
-          thumbPose.transform.position,
+        this.vec3.lerpVectors(
+          indexPose!.transform.position,
+          thumbPose!.transform.position,
           0.5,
         );
+        if (pinchSpace.userData.isPinching) {
+          // Don't update position while pinching to avoid jitter
+          // pinchSpace.position.lerp(this.vec3, 0.2);
+        } else {
+          pinchSpace.position.copy(this.vec3);
+        }
       }
     }
   }
