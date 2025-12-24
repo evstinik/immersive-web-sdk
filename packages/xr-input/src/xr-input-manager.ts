@@ -71,6 +71,12 @@ export class XRInputManager {
     right: undefined,
   } as Record<'left' | 'right', StatefulGamepad | undefined>;
 
+  /**
+   * Set to true if you want to emit "squeeze" events based on finger proximity for hands instead of relying on gamepad buttons
+   * Good for Apple Vision Pro to still have grab pointer functionality even with transient pointers, without gaze.
+   */
+  public emitGrabEventsManually = false;
+
   public readonly visualAdapters: {
     controller: {
       left: XRControllerVisualAdapter;
@@ -391,12 +397,17 @@ export class XRInputManager {
         hasGamepad &&
         this.gamepads[handedness]
       );
-      const selectStart = connected
-        ? !!this.gamepads[handedness]?.getSelectStart()
-        : false;
-      const selectEnd = connected
-        ? !!this.gamepads[handedness]?.getSelectEnd()
-        : false;
+      const visualAdapter = this.visualAdapters.hand[handedness];
+      const selectStart =
+        (connected ? !!this.gamepads[handedness]?.getSelectStart() : false) ||
+        (this.emitGrabEventsManually &&
+          visualAdapter &&
+          visualAdapter.getSelectStart());
+      const selectEnd =
+        (connected ? !!this.gamepads[handedness]?.getSelectEnd() : false) ||
+        (this.emitGrabEventsManually &&
+          visualAdapter &&
+          visualAdapter.getSelectEnd());
 
       // First: move all registered pointers (ray + grab) via the combined pointer
       const gp = this.gamepads[handedness];

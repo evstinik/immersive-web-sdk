@@ -243,17 +243,17 @@ export class XRHandVisualAdapter extends XRInputVisualAdapter {
     }
   }
 
-  // getSelectStart() {
-  // 	return this.pinchData.curr && !this.pinchData.prev;
-  // }
+  getSelectStart() {
+    return this.pinchData.curr && !this.pinchData.prev;
+  }
 
-  // getSelectEnd() {
-  // 	return !this.pinchData.curr && this.pinchData.prev;
-  // }
+  getSelectEnd() {
+    return !this.pinchData.curr && this.pinchData.prev;
+  }
 
-  // getSelecting() {
-  // 	return this.pinchData.curr;
-  // }
+  getSelecting() {
+    return this.pinchData.curr;
+  }
 
   capturePose(refSpace: XRSpace) {
     return new Promise<HandPose>((resolve, reject) => {
