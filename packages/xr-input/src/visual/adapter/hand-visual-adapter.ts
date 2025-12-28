@@ -80,7 +80,8 @@ export class XRHandVisualAdapter extends XRInputVisualAdapter {
   public jointTransforms?: Float32Array;
   public indexTip?: XRSpace;
   private thumbTip?: XRSpace;
-  private pinchThreshold = 0.008;
+  private pinchStartThreshold = 0.008;
+  private pinchReleaseThreshold = 0.015;
   private pinchCooldown = 0;
   private pinchData = { prev: false, curr: false };
   private vec3 = new Vector3();
@@ -195,7 +196,10 @@ export class XRHandVisualAdapter extends XRInputVisualAdapter {
       const pose = frame.getPose(this.indexTip, this.thumbTip);
       if (pose) {
         this.vec3.copy(pose.transform.position);
-        const pinching = this.vec3.length() < this.pinchThreshold;
+        const dist = this.vec3.length();
+        const pinching = this.pinchData.prev
+          ? dist < this.pinchReleaseThreshold
+          : dist < this.pinchStartThreshold;
         if (pinching) {
           this.pinchCooldown = PINCH_COOLDOWN;
         }

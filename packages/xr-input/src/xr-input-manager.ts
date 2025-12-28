@@ -337,12 +337,20 @@ export class XRInputManager {
               hasGamepad &&
               this.gamepads[handedness]
             );
-            const selectStart = connected
-              ? !!this.gamepads[handedness]?.getSelectStart()
-              : false;
-            const selectEnd = connected
-              ? !!this.gamepads[handedness]?.getSelectEnd()
-              : false;
+            const selectStart =
+              (connected
+                ? !!this.gamepads[handedness]?.getSelectStart()
+                : false) ||
+              (this.emitGrabEventsManually &&
+                visualAdapter &&
+                visualAdapter.getSelectStart());
+            const selectEnd =
+              (connected
+                ? !!this.gamepads[handedness]?.getSelectEnd()
+                : false) ||
+              (this.emitGrabEventsManually &&
+                visualAdapter &&
+                visualAdapter.getSelectEnd());
 
             visualAdapter.updatePinchSpace(
               frame,
